@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบบันทึกการติดตั้งและรื้อถอนกล้องวงจรปิด สถานีขนถ่ายอ้อย (43 เครน)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Sarabun -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f8fafc;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            body {
+                background-color: #ffffff;
+                font-size: 11pt;
+            }
+            .card-box {
+                border: 1px solid #cbd5e1 !important;
+                box-shadow: none !important;
+                break-inside: avoid;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-800 pb-12">
+
+    <!-- Header Section -->
+    <header class="bg-emerald-800 text-white py-5 px-4 shadow-md no-print">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold flex items-center gap-3">
+                    <i class="fa-solid fa-video text-amber-400"></i>
+                    ระบบบันทึกการติดตั้งและรื้อถอนกล้องวงจรปิด
+                </h1>
+                <p class="text-emerald-100 text-sm mt-1">สถานีขนถ่ายอ้อย ประจำฤดูกาลหีบ (รวมทั้งสิ้น 43 เครน)</p>
+            </div>
+            <div class="flex flex-wrap gap-2 justify-center md:justify-end">
+                <a href="https://drive.google.com/drive/folders/1qnf__W3Pyd08gbnFLx7ICBBvOTxj2tdF" target="_blank" rel="noopener noreferrer" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg font-medium shadow text-sm transition flex items-center gap-2">
+                    <i class="fa-brands fa-google-drive text-amber-300"></i> โฟลเดอร์ Drive
+                </a>
+                <button onclick="window.print()" class="bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-2 rounded-lg font-medium shadow text-sm transition flex items-center gap-2">
+                    <i class="fa-solid fa-print"></i> พิมพ์ / PDF
+                </button>
+                <button onclick="resetData()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm transition flex items-center gap-1">
+                    <i class="fa-solid fa-rotate-left"></i> รีเซ็ต
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 mt-6">
+
+        <!-- Google Apps Script Connection Config Box -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 no-print">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="w-full sm:w-auto flex items-center gap-2">
+                    <i class="fa-solid fa-plug-circle-check text-emerald-600 text-xl"></i>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800">เชื่อมต่อ Google Apps Script & Google Drive</h3>
+                        <p class="text-xs text-slate-500">ระบบเชื่อมต่อเรียบร้อยแล้ว ข้อมูลและรูปภาพจะส่งเข้า Google Drive อัตโนมัติ</p>
+                    </div>
+                </div>
+                <div class="w-full sm:w-1/2 flex gap-2">
+                    <input type="text" id="gasUrlInput" placeholder="วาง Google Apps Script Web App URL..." class="w-full text-xs p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 font-mono">
+                    <button onclick="saveGasUrl()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-3 py-2 rounded-lg font-medium whitespace-nowrap">
+                        บันทึก URL
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Print Header (Visible only when printing) -->
+        <div class="hidden print-only mb-6 border-b pb-4">
+            <h1 class="text-2xl font-bold text-center">แบบบันทึกการติดตั้งและรื้อถอนกล้องวงจรปิด สถานีขนถ่ายอ้อย (43 เครน)</h1>
+            <p class="text-center text-gray-600 text-sm mt-1">
+                ไดเรกทอรี Google Drive: https://drive.google.com/drive/folders/1qnf__W3Pyd08gbnFLx7ICBBvOTxj2tdF
+            </p>
+            <p class="text-center text-gray-500 text-xs mt-1">วันที่พิมพ์เอกสาร: <span id="print-date"></span></p>
+        </div>
+
+        <!-- Dashboard Summary Bar (Separated Statuses) -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6 no-print">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-slate-500 text-xs font-semibold uppercase">เครนทั้งหมด</div>
+                <div class="text-2xl font-bold text-slate-800 mt-1" id="stat-total">43</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500">
+                <div class="text-emerald-700 text-xs font-semibold uppercase">ติดตั้งแล้ว</div>
+                <div class="text-2xl font-bold text-emerald-600 mt-1" id="stat-installed">0</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-amber-500">
+                <div class="text-amber-700 text-xs font-semibold uppercase">ยังไม่ติดตั้ง</div>
+                <div class="text-2xl font-bold text-amber-600 mt-1" id="stat-not-installed">0</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500">
+                <div class="text-blue-700 text-xs font-semibold uppercase">รื้อถอนแล้ว</div>
+                <div class="text-2xl font-bold text-blue-600 mt-1" id="stat-removed">0</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-slate-400">
+                <div class="text-slate-600 text-xs font-semibold uppercase">ยังไม่รื้อถอน</div>
+                <div class="text-2xl font-bold text-slate-600 mt-1" id="stat-not-removed">0</div>
+            </div>
+        </div>
+
+        <!-- Controls & Dropdown Selection -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 no-print space-y-3">
+            <div class="flex flex-col md:flex-row gap-3">
+                <!-- Dropdown Select Crane -->
+                <div class="flex-1">
+                    <label for="craneSelectDropdown" class="block text-xs font-semibold text-slate-600 mb-1">
+                        <i class="fa-solid fa-list-check text-emerald-600 mr-1"></i> เลือกรายชื่อเครน (ดรอปดาวน์)
+                    </label>
+                    <select id="craneSelectDropdown" onchange="handleDropdownChange()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <option value="all">-- แสดงเครนทั้งหมด (43 รายการ) --</option>
+                    </select>
+                </div>
+
+                <!-- Search Input -->
+                <div class="flex-1">
+                    <label for="searchInput" class="block text-xs font-semibold text-slate-600 mb-1">
+                        <i class="fa-solid fa-magnifying-glass text-slate-400 mr-1"></i> ค้นหาชื่อเครน
+                    </label>
+                    <input type="text" id="searchInput" oninput="filterCranes()" placeholder="พิมพ์ชื่อเครนเพื่อค้นหา..." class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+            </div>
+
+            <!-- Filter Status Buttons -->
+            <div class="flex gap-2 overflow-x-auto pt-2 border-t border-slate-100 text-xs">
+                <button onclick="setFilter('all')" id="btn-filter-all" class="filter-btn px-3 py-1.5 rounded-lg font-medium bg-emerald-800 text-white whitespace-nowrap">ทั้งหมด</button>
+                <button onclick="setFilter('installed')" id="btn-filter-installed" class="filter-btn px-3 py-1.5 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 whitespace-nowrap">ติดตั้งเรียบร้อย</button>
+                <button onclick="setFilter('not_installed')" id="btn-filter-not_installed" class="filter-btn px-3 py-1.5 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 whitespace-nowrap">ยังไม่ติดตั้ง</button>
+                <button onclick="setFilter('removed')" id="btn-filter-removed" class="filter-btn px-3 py-1.5 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 whitespace-nowrap">รื้อถอนเรียบร้อย</button>
+                <button onclick="setFilter('not_removed')" id="btn-filter-not_removed" class="filter-btn px-3 py-1.5 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 whitespace-nowrap">ยังไม่รื้อถอน</button>
+            </div>
+        </div>
+
+        <!-- Google Drive Banner Notice -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3.5 mb-6 no-print flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 text-white p-2.5 rounded-lg">
+                    <i class="fa-brands fa-google-drive text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-blue-900">โฟลเดอร์ Google Drive สำหรับเก็บไฟล์รูปภาพ</h4>
+                    <p class="text-xs text-blue-700">ID: <span class="font-mono bg-blue-100 px-1 rounded">1qnf__W3Pyd08gbnFLx7ICBBvOTxj2tdF</span></p>
+                </div>
+            </div>
+            <a href="https://drive.google.com/drive/folders/1qnf__W3Pyd08gbnFLx7ICBBvOTxj2tdF" target="_blank" rel="noopener noreferrer" class="whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-semibold transition shadow-sm">
+                <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> เปิดโฟลเดอร์ Drive
+            </a>
+        </div>
+
+        <!-- Crane Cards Container -->
+        <div id="craneContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Dynamic Content Generated by JS -->
+        </div>
+
+    </main>
+
+    <!-- Modal for Editing Crane Details -->
+    <div id="editModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 no-print overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl my-8 max-h-[92vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-emerald-700 text-xl"></i>
+                    <h3 class="text-xl font-bold text-slate-800" id="modalTitle">แก้ไขข้อมูลเครน</h3>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold">&times;</button>
+            </div>
+
+            <form id="craneForm" onsubmit="saveCraneData(event)">
+                <input type="hidden" id="modalCraneIndex">
+
+                <!-- Crane Selection inside Modal -->
+                <div class="mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">เลือกเครนที่ต้องการแก้ไข</label>
+                    <select id="modalCraneSelect" onchange="switchModalCrane(this.value)" class="w-full border rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-emerald-500">
+                        <!-- Options generated by JS -->
+                    </select>
+                </div>
+
+                <!-- Grid 2 Columns for Install and Remove Sections -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    
+                    <!-- 1. Installation Section -->
+                    <div class="bg-emerald-50/70 p-4 rounded-xl border border-emerald-200 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between pb-2 mb-3 border-b border-emerald-200">
+                                <h4 class="font-bold text-emerald-800 flex items-center gap-2 text-sm">
+                                    <i class="fa-solid fa-wrench"></i> 1. งานติดตั้ง
+                                </h4>
+                                <select id="modalInstallStatus" class="border border-emerald-300 rounded-lg p-1.5 text-xs font-bold text-emerald-900 bg-white">
+                                    <option value="not_installed">🔴 ยังไม่ติดตั้ง</option>
+                                    <option value="installed">🟢 ติดตั้งเรียบร้อย</option>
+                                </select>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">วันที่ติดตั้ง</label>
+                                    <input type="date" id="modalInstallDate" class="w-full border rounded-lg p-2 text-sm bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">ช่างผู้ติดตั้ง</label>
+                                    <input type="text" id="modalInstallTech" placeholder="ชื่อ-นามสกุล ช่าง" class="w-full border rounded-lg p-2 text-sm bg-white">
+                                </div>
+                            </div>
+
+                            <p class="text-xs font-semibold text-slate-700 mb-2">รูปภาพงานติดตั้ง (2 ภาพ)</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <!-- Photo 1 -->
+                                <div class="border border-slate-300 rounded-xl p-2 text-center bg-white relative">
+                                    <p class="text-[11px] font-semibold text-slate-600 mb-1">ภาพที่ 1</p>
+                                    <div class="h-24 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden mb-2 relative">
+                                        <img id="previewImg1" class="hidden w-full h-full object-cover">
+                                        <div id="phHolder1" class="text-slate-400 text-xs flex flex-col items-center">
+                                            <i class="fa-solid fa-camera text-base mb-1"></i>
+                                            <span>ไม่มีรูป</span>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="photo1" accept="image/*" onchange="handleImageUpload(this, 1)" class="hidden">
+                                    <div class="flex gap-1 justify-center">
+                                        <button type="button" onclick="document.getElementById('photo1').click()" class="bg-slate-100 border px-2 py-1 rounded text-[11px] font-medium text-slate-700 hover:bg-slate-200 shadow-sm w-full">เลือกรูป</button>
+                                        <button type="button" onclick="removeImage(1)" id="removeBtn1" class="hidden bg-red-500 text-white rounded px-2 py-1 text-[11px]">ลบ</button>
+                                    </div>
+                                </div>
+
+                                <!-- Photo 2 -->
+                                <div class="border border-slate-300 rounded-xl p-2 text-center bg-white relative">
+                                    <p class="text-[11px] font-semibold text-slate-600 mb-1">ภาพที่ 2</p>
+                                    <div class="h-24 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden mb-2 relative">
+                                        <img id="previewImg2" class="hidden w-full h-full object-cover">
+                                        <div id="phHolder2" class="text-slate-400 text-xs flex flex-col items-center">
+                                            <i class="fa-solid fa-camera text-base mb-1"></i>
+                                            <span>ไม่มีรูป</span>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="photo2" accept="image/*" onchange="handleImageUpload(this, 2)" class="hidden">
+                                    <div class="flex gap-1 justify-center">
+                                        <button type="button" onclick="document.getElementById('photo2').click()" class="bg-slate-100 border px-2 py-1 rounded text-[11px] font-medium text-slate-700 hover:bg-slate-200 shadow-sm w-full">เลือกรูป</button>
+                                        <button type="button" onclick="removeImage(2)" id="removeBtn2" class="hidden bg-red-500 text-white rounded px-2 py-1 text-[11px]">ลบ</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Removal Section -->
+                    <div class="bg-amber-50/70 p-4 rounded-xl border border-amber-200 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between pb-2 mb-3 border-b border-amber-200">
+                                <h4 class="font-bold text-amber-800 flex items-center gap-2 text-sm">
+                                    <i class="fa-solid fa-box-archive"></i> 2. งานรื้อถอน
+                                </h4>
+                                <select id="modalRemoveStatus" class="border border-amber-300 rounded-lg p-1.5 text-xs font-bold text-amber-900 bg-white">
+                                    <option value="not_removed">⚪ ยังไม่รื้อถอน</option>
+                                    <option value="removed">🔵 รื้อถอนเรียบร้อย</option>
+                                </select>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">วันที่รื้อถอน</label>
+                                    <input type="date" id="modalRemoveDate" class="w-full border rounded-lg p-2 text-sm bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">ช่างผู้รื้อถอน</label>
+                                    <input type="text" id="modalRemoveTech" placeholder="ชื่อ-นามสกุล ช่าง" class="w-full border rounded-lg p-2 text-sm bg-white">
+                                </div>
+                            </div>
+
+                            <p class="text-xs font-semibold text-slate-700 mb-2">รูปภาพงานรื้อถอน (2 ภาพ)</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <!-- Photo 3 -->
+                                <div class="border border-slate-300 rounded-xl p-2 text-center bg-white relative">
+                                    <p class="text-[11px] font-semibold text-slate-600 mb-1">ภาพที่ 3</p>
+                                    <div class="h-24 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden mb-2 relative">
+                                        <img id="previewImg3" class="hidden w-full h-full object-cover">
+                                        <div id="phHolder3" class="text-slate-400 text-xs flex flex-col items-center">
+                                            <i class="fa-solid fa-camera text-base mb-1"></i>
+                                            <span>ไม่มีรูป</span>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="photo3" accept="image/*" onchange="handleImageUpload(this, 3)" class="hidden">
+                                    <div class="flex gap-1 justify-center">
+                                        <button type="button" onclick="document.getElementById('photo3').click()" class="bg-slate-100 border px-2 py-1 rounded text-[11px] font-medium text-slate-700 hover:bg-slate-200 shadow-sm w-full">เลือกรูป</button>
+                                        <button type="button" onclick="removeImage(3)" id="removeBtn3" class="hidden bg-red-500 text-white rounded px-2 py-1 text-[11px]">ลบ</button>
+                                    </div>
+                                </div>
+
+                                <!-- Photo 4 -->
+                                <div class="border border-slate-300 rounded-xl p-2 text-center bg-white relative">
+                                    <p class="text-[11px] font-semibold text-slate-600 mb-1">ภาพที่ 4</p>
+                                    <div class="h-24 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden mb-2 relative">
+                                        <img id="previewImg4" class="hidden w-full h-full object-cover">
+                                        <div id="phHolder4" class="text-slate-400 text-xs flex flex-col items-center">
+                                            <i class="fa-solid fa-camera text-base mb-1"></i>
+                                            <span>ไม่มีรูป</span>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="photo4" accept="image/*" onchange="handleImageUpload(this, 4)" class="hidden">
+                                    <div class="flex gap-1 justify-center">
+                                        <button type="button" onclick="document.getElementById('photo4').click()" class="bg-slate-100 border px-2 py-1 rounded text-[11px] font-medium text-slate-700 hover:bg-slate-200 shadow-sm w-full">เลือกรูป</button>
+                                        <button type="button" onclick="removeImage(4)" id="removeBtn4" class="hidden bg-red-500 text-white rounded px-2 py-1 text-[11px]">ลบ</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Remarks -->
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">หมายเหตุ / ปัญหาที่พบ</label>
+                    <textarea id="modalRemarks" rows="2" placeholder="ระบุรายละเอียดเพิ่มเติม หรือหมายเหตุ..." class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-lg text-slate-600 hover:bg-slate-100 text-sm font-medium">ยกเลิก</button>
+                    <button type="submit" id="saveSubmitBtn" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-medium text-sm transition shadow flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>บันทึกข้อมูล & ส่งเข้า Drive</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Banner -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 no-print">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <span id="toastMsg" class="text-sm font-medium">บันทึกข้อมูลเรียบร้อยแล้ว</span>
+    </div>
+
+    <script>
+        // Deployed Google Apps Script Web App URL
+        const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwod9r6KJ9mCoMizpk6I3IVRbRu-hoiYd80kFGL8VrdAR0onomxfjZP5ludavYiUbn6/exec';
+
+        // List of 43 Sugarcane Crane Stations
+        const craneNames = [
+            "เครนขามสะแกแสง1", "เครนขามสะแกแสง2", "เครนคูเมือง", "เครนซับใหญ่", 
+            "เครนวังโพธิ์(บ้านเหลื่อม1)", "เครนดอนทอง(บ้านเหลื่อม2)", "เครนดอนหัน", "เครนทำนบ 2", 
+            "เครนทำนบพัฒนา", "เครนนาเสียว", "เครนเนินสง่า", "เครนบ้านเขว้า1", 
+            "เครนบ้านเขว้า2", "เครนบ้านเขว้า3", "เครนบ้านค่าย 1", "เครนบ้านค่าย 2", 
+            "เครนบ้านเดื่อ", "เครนบ้านปรางค์", "เครนภูแลนคา", "เครนรกฟ้า", 
+            "เครนวังชมภู", "เครนสระสี่เหลี่ยม 1", "เครนสระสี่เหลี่ยม2", "เครนหนองโคบาล", 
+            "เครนหนองบัวแดง", "เครนหนองบัวระเหว", "เครนหนองบัวระเหว2", "เครนหนองบัวลาย", 
+            "เครนหนองพลวง", "เครนหนองแวง", "เครนหนองหอย", "เครนหนองหัวฟาน", 
+            "เครนห้วยต้อน", "เครนห้วยไร่", "เครนหินกอง", "เครนท่าหินโงม", 
+            "เครนเนินสง่า 2", "เครนโนนตาลเสี้ยน", "เครนบ้านเขว้า 4", "เครนภูแลนคา 2", 
+            "เครนสงแดง", "เครนหนองม่วงช่างพิมพ์", "เครนจัตุรัส"
+        ];
+
+        let craneData = [];
+        let currentFilter = 'all';
+        let selectedDropdownCraneIndex = 'all';
+        let gasWebAppUrl = '';
+        
+        let tempPhotos = { photo1: '', photo2: '', photo3: '', photo4: '' };
+
+        function initData() {
+            gasWebAppUrl = localStorage.getItem('cctv_gas_url') || DEFAULT_GAS_URL;
+            document.getElementById('gasUrlInput').value = gasWebAppUrl;
+
+            const saved = localStorage.getItem('cctv_crane_data_v3');
+            if (saved) {
+                craneData = JSON.parse(saved);
+            } else {
+                craneData = craneNames.map((name, idx) => ({
+                    id: idx + 1,
+                    name: name,
+                    installStatus: 'not_installed', // not_installed, installed
+                    removeStatus: 'not_removed',   // not_removed, removed
+                    installDate: '',
+                    installTech: '',
+                    removeDate: '',
+                    removeTech: '',
+                    photo1: '',
+                    photo2: '',
+                    photo3: '',
+                    photo4: '',
+                    remarks: ''
+                }));
+                saveToLocalStorage();
+            }
+
+            populateDropdowns();
+            
+            document.getElementById('print-date').innerText = new Date().toLocaleDateString('th-TH', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            });
+
+            render();
+            if (gasWebAppUrl) {
+                fetchDataFromGAS();
+            }
+        }
+
+        function showToast(msg, isSuccess = true) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+            if (!toast) return;
+            toastMsg.innerText = msg;
+            toastIcon.className = isSuccess 
+                ? "fa-solid fa-circle-check text-emerald-400 text-lg" 
+                : "fa-solid fa-circle-exclamation text-amber-400 text-lg";
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 4000);
+        }
+
+        function saveGasUrl() {
+            const url = document.getElementById('gasUrlInput').value.trim();
+            localStorage.setItem('cctv_gas_url', url || DEFAULT_GAS_URL);
+            gasWebAppUrl = url || DEFAULT_GAS_URL;
+            showToast("บันทึก Google Apps Script Web App URL เรียบร้อยแล้ว!");
+            if (gasWebAppUrl) fetchDataFromGAS();
+        }
+
+        async function fetchDataFromGAS() {
+            if (!gasWebAppUrl) return;
+            try {
+                const response = await fetch(gasWebAppUrl);
+                const res = await response.json();
+                if (res.status === 'success' && Array.isArray(res.data) && res.data.length > 0) {
+                    res.data.forEach(item => {
+                        const idx = craneData.findIndex(c => c.id == item['ID เครน']);
+                        if (idx !== -1) {
+                            craneData[idx].installStatus = item['สถานะการติดตั้ง'] || craneData[idx].installStatus;
+                            craneData[idx].removeStatus = item['สถานะการรื้อถอน'] || craneData[idx].removeStatus;
+                            craneData[idx].installDate = item['วันที่ติดตั้ง'] || craneData[idx].installDate;
+                            craneData[idx].installTech = item['ช่างติดตั้ง'] || craneData[idx].installTech;
+                            craneData[idx].removeDate = item['วันที่รื้อถอน'] || craneData[idx].removeDate;
+                            craneData[idx].removeTech = item['ช่างรื้อถอน'] || craneData[idx].removeTech;
+                            craneData[idx].remarks = item['หมายเหตุ'] || craneData[idx].remarks;
+                            if (item['ภาพที่1_URL']) craneData[idx].photo1 = item['ภาพที่1_URL'];
+                            if (item['ภาพที่2_URL']) craneData[idx].photo2 = item['ภาพที่2_URL'];
+                            if (item['ภาพที่3_URL']) craneData[idx].photo3 = item['ภาพที่3_URL'];
+                            if (item['ภาพที่4_URL']) craneData[idx].photo4 = item['ภาพที่4_URL'];
+                        }
+                    });
+                    saveToLocalStorage();
+                    render();
+                }
+            } catch (err) {
+                console.log("Could not fetch data from GAS: ", err);
+            }
+        }
+
+        function resetData() {
+            if (window.confirm("คุณต้องการรีเซ็ตข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้นหรือไม่?")) {
+                localStorage.removeItem('cctv_crane_data_v3');
+                initData();
+                showToast("รีเซ็ตข้อมูลเรียบร้อยแล้ว");
+            }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('cctv_crane_data_v3', JSON.stringify(craneData));
+        }
+
+        function populateDropdowns() {
+            const dropdown = document.getElementById('craneSelectDropdown');
+            const modalSelect = document.getElementById('modalCraneSelect');
+            
+            dropdown.innerHTML = `<option value="all">-- แสดงเครนทั้งหมด (43 รายการ) --</option>`;
+            modalSelect.innerHTML = '';
+
+            craneData.forEach((item, idx) => {
+                const opt1 = document.createElement('option');
+                opt1.value = idx;
+                opt1.textContent = `${item.id}. ${item.name}`;
+                dropdown.appendChild(opt1);
+
+                const opt2 = document.createElement('option');
+                opt2.value = idx;
+                opt2.textContent = `${item.id}. ${item.name}`;
+                modalSelect.appendChild(opt2);
+            });
+        }
+
+        function render() {
+            const container = document.getElementById('craneContainer');
+            const searchVal = document.getElementById('searchInput').value.trim().toLowerCase();
+            container.innerHTML = '';
+
+            let installedCount = 0;
+            let notInstalledCount = 0;
+            let removedCount = 0;
+            let notRemovedCount = 0;
+
+            craneData.forEach(item => {
+                if (item.installStatus === 'installed') installedCount++;
+                else notInstalledCount++;
+
+                if (item.removeStatus === 'removed') removedCount++;
+                else notRemovedCount++;
+            });
+
+            document.getElementById('stat-total').innerText = craneData.length;
+            document.getElementById('stat-installed').innerText = installedCount;
+            document.getElementById('stat-not-installed').innerText = notInstalledCount;
+            document.getElementById('stat-removed').innerText = removedCount;
+            document.getElementById('stat-not-removed').innerText = notRemovedCount;
+
+            craneData.forEach((item, index) => {
+                if (selectedDropdownCraneIndex !== 'all' && index != selectedDropdownCraneIndex) {
+                    return;
+                }
+
+                if (searchVal && !item.name.toLowerCase().includes(searchVal)) {
+                    return;
+                }
+
+                if (currentFilter === 'installed' && item.installStatus !== 'installed') return;
+                if (currentFilter === 'not_installed' && item.installStatus !== 'not_installed') return;
+                if (currentFilter === 'removed' && item.removeStatus !== 'removed') return;
+                if (currentFilter === 'not_removed' && item.removeStatus !== 'not_removed') return;
+
+                const card = document.createElement('div');
+                card.className = 'card-box bg-white rounded-xl border border-slate-200 shadow-sm p-5 transition hover:shadow-md relative flex flex-col justify-between';
+                
+                const isInstalled = item.installStatus === 'installed';
+                const isRemoved = item.removeStatus === 'removed';
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center mb-4 gap-2 border-b pb-2">
+                            <div class="flex items-center gap-2.5">
+                                <span class="bg-slate-100 text-slate-700 font-bold text-xs px-2.5 py-1 rounded-md border border-slate-300">#${item.id}</span>
+                                <h3 class="font-bold text-base md:text-lg text-slate-800">${item.name}</h3>
+                            </div>
+                        </div>
+
+                        <!-- 2 Separate Sections: Installation & Removal -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 text-xs">
+                            
+                            <!-- Installation Card Section -->
+                            <div class="bg-emerald-50/70 p-3 rounded-xl border border-emerald-200 flex flex-col justify-between">
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="font-bold text-emerald-800 flex items-center gap-1">
+                                            <i class="fa-solid fa-wrench"></i> งานติดตั้ง
+                                        </span>
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${isInstalled ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-amber-100 text-amber-800 border-amber-300'}">
+                                            ${isInstalled ? '🟢 ติดตั้งแล้ว' : '🔴 ยังไม่ติดตั้ง'}
+                                        </span>
+                                    </div>
+                                    <div class="text-slate-600 mb-1">วันที่: <span class="font-medium text-slate-800">${item.installDate || '-'}</span></div>
+                                    <div class="text-slate-600 mb-2">ช่าง: <span class="font-medium text-slate-800">${item.installTech || '-'}</span></div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] font-semibold text-slate-500 mb-1">รูปภาพติดตั้ง:</div>
+                                    <div class="grid grid-cols-2 gap-1.5">
+                                        ${renderPhotoThumb(item.photo1, 'ภาพที่ 1')}
+                                        ${renderPhotoThumb(item.photo2, 'ภาพที่ 2')}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Removal Card Section -->
+                            <div class="bg-amber-50/70 p-3 rounded-xl border border-amber-200 flex flex-col justify-between">
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="font-bold text-amber-800 flex items-center gap-1">
+                                            <i class="fa-solid fa-box-archive"></i> งานรื้อถอน
+                                        </span>
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${isRemoved ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-slate-100 text-slate-600 border-slate-300'}">
+                                            ${isRemoved ? '🔵 รื้อถอนแล้ว' : '⚪ ยังไม่รื้อถอน'}
+                                        </span>
+                                    </div>
+                                    <div class="text-slate-600 mb-1">วันที่: <span class="font-medium text-slate-800">${item.removeDate || '-'}</span></div>
+                                    <div class="text-slate-600 mb-2">ช่าง: <span class="font-medium text-slate-800">${item.removeTech || '-'}</span></div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] font-semibold text-slate-500 mb-1">รูปภาพรื้อถอน:</div>
+                                    <div class="grid grid-cols-2 gap-1.5">
+                                        ${renderPhotoThumb(item.photo3, 'ภาพที่ 3')}
+                                        ${renderPhotoThumb(item.photo4, 'ภาพที่ 4')}
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        ${item.remarks ? `<div class="text-xs text-slate-600 bg-slate-50 p-2 rounded-lg border mb-3"><span class="font-semibold text-slate-700">หมายเหตุ:</span> ${item.remarks}</div>` : ''}
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-100 flex justify-end no-print">
+                        <button onclick="openModal(${index})" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-pen-to-square"></i> บันทึก / แก้ไขข้อมูล
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            if (container.children.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full bg-white p-8 rounded-xl text-center border border-dashed border-slate-300">
+                        <i class="fa-solid fa-folder-open text-slate-300 text-4xl mb-2"></i>
+                        <p class="text-slate-500 font-medium text-sm">ไม่พบข้อมูลรายการเครนตรงกับเงื่อนไขการค้นหา</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderPhotoThumb(photoUrl, label) {
+            if (photoUrl) {
+                return `
+                    <a href="${photoUrl}" target="_blank" class="block h-14 rounded-lg overflow-hidden border border-slate-300 relative group bg-slate-100">
+                        <img src="${photoUrl}" class="w-full h-full object-cover group-hover:scale-110 transition duration-200">
+                        <span class="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] text-center py-0.5 truncate">${label}</span>
+                    </a>
+                `;
+            } else {
+                return `
+                    <div class="h-14 rounded-lg border border-dashed border-slate-300 bg-white/80 flex flex-col items-center justify-center text-slate-400">
+                        <i class="fa-solid fa-camera text-[10px]"></i>
+                        <span class="text-[9px] mt-0.5">${label}</span>
+                    </div>
+                `;
+            }
+        }
+
+        function handleDropdownChange() {
+            selectedDropdownCraneIndex = document.getElementById('craneSelectDropdown').value;
+            render();
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = 'filter-btn px-3 py-1.5 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 whitespace-nowrap';
+            });
+            document.getElementById(`btn-filter-${filter}`).className = 'filter-btn px-3 py-1.5 rounded-lg font-medium bg-emerald-800 text-white whitespace-nowrap';
+            render();
+        }
+
+        function filterCranes() {
+            render();
+        }
+
+        function openModal(index) {
+            const crane = craneData[index];
+            document.getElementById('modalCraneIndex').value = index;
+            document.getElementById('modalTitle').innerText = `บันทึกข้อมูล: ${crane.name}`;
+            document.getElementById('modalCraneSelect').value = index;
+            document.getElementById('modalInstallStatus').value = crane.installStatus || 'not_installed';
+            document.getElementById('modalRemoveStatus').value = crane.removeStatus || 'not_removed';
+            document.getElementById('modalInstallDate').value = crane.installDate || '';
+            document.getElementById('modalInstallTech').value = crane.installTech || '';
+            document.getElementById('modalRemoveDate').value = crane.removeDate || '';
+            document.getElementById('modalRemoveTech').value = crane.removeTech || '';
+            document.getElementById('modalRemarks').value = crane.remarks || '';
+
+            tempPhotos = {
+                photo1: crane.photo1 || '',
+                photo2: crane.photo2 || '',
+                photo3: crane.photo3 || '',
+                photo4: crane.photo4 || ''
+            };
+
+            for (let i = 1; i <= 4; i++) {
+                updateImagePreviewUI(i, tempPhotos[`photo${i}`]);
+            }
+
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function switchModalCrane(newIndex) {
+            openModal(newIndex);
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        function handleImageUpload(input, photoIndex) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        const MAX_WIDTH = 1000;
+                        const MAX_HEIGHT = 1000;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
+                        tempPhotos[`photo${photoIndex}`] = compressedBase64;
+                        updateImagePreviewUI(photoIndex, compressedBase64);
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removeImage(photoIndex) {
+            tempPhotos[`photo${photoIndex}`] = '';
+            document.getElementById(`photo${photoIndex}`).value = '';
+            updateImagePreviewUI(photoIndex, '');
+        }
+
+        function updateImagePreviewUI(photoIndex, url) {
+            const previewImg = document.getElementById(`previewImg${photoIndex}`);
+            const placeholder = document.getElementById(`phHolder${photoIndex}`);
+            const removeBtn = document.getElementById(`removeBtn${photoIndex}`);
+
+            if (url) {
+                previewImg.src = url;
+                previewImg.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                removeBtn.classList.remove('hidden');
+            } else {
+                previewImg.src = '';
+                previewImg.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                removeBtn.classList.add('hidden');
+            }
+        }
+
+        async function saveCraneData(e) {
+            e.preventDefault();
+            const index = document.getElementById('modalCraneIndex').value;
+            const submitBtn = document.getElementById('saveSubmitBtn');
+            const originalBtnContent = submitBtn.innerHTML;
+
+            const updatedRecord = {
+                ...craneData[index],
+                installStatus: document.getElementById('modalInstallStatus').value,
+                removeStatus: document.getElementById('modalRemoveStatus').value,
+                installDate: document.getElementById('modalInstallDate').value,
+                installTech: document.getElementById('modalInstallTech').value,
+                removeDate: document.getElementById('modalRemoveDate').value,
+                removeTech: document.getElementById('modalRemoveTech').value,
+                remarks: document.getElementById('modalRemarks').value,
+                photo1: tempPhotos.photo1,
+                photo2: tempPhotos.photo2,
+                photo3: tempPhotos.photo3,
+                photo4: tempPhotos.photo4
+            };
+
+            craneData[index] = updatedRecord;
+            saveToLocalStorage();
+            render();
+
+            // Send to Google Drive / Sheet via Apps Script if configured
+            if (gasWebAppUrl) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> กำลังส่งไป Drive...`;
+
+                try {
+                    const payload = {
+                        action: 'save_crane',
+                        payload: {
+                            craneId: updatedRecord.id,
+                            craneName: updatedRecord.name,
+                            installStatus: updatedRecord.installStatus,
+                            removeStatus: updatedRecord.removeStatus,
+                            installDate: updatedRecord.installDate,
+                            installTech: updatedRecord.installTech,
+                            removeDate: updatedRecord.removeDate,
+                            removeTech: updatedRecord.removeTech,
+                            remarks: updatedRecord.remarks,
+                            photo1: updatedRecord.photo1,
+                            photo2: updatedRecord.photo2,
+                            photo3: updatedRecord.photo3,
+                            photo4: updatedRecord.photo4
+                        }
+                    };
+
+                    const response = await fetch(gasWebAppUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const resJson = await response.json();
+                    if (resJson.status === 'success' && resJson.data) {
+                        if (resJson.data.photo1) craneData[index].photo1 = resJson.data.photo1;
+                        if (resJson.data.photo2) craneData[index].photo2 = resJson.data.photo2;
+                        if (resJson.data.photo3) craneData[index].photo3 = resJson.data.photo3;
+                        if (resJson.data.photo4) craneData[index].photo4 = resJson.data.photo4;
+                        saveToLocalStorage();
+                        render();
+                        showToast("บันทึกข้อมูลและอัปโหลดรูปภาพลง Google Drive สำเร็จ!");
+                    } else {
+                        showToast("บันทึกข้อมูลในเครื่องเรียบร้อยแล้ว", true);
+                    }
+                } catch (err) {
+                    showToast("บันทึกข้อมูลในเครื่องแล้ว (ไม่สามารถส่งไป Apps Script ได้)", false);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnContent;
+                }
+            } else {
+                showToast("บันทึกข้อมูลลงเครื่องเรียบร้อยแล้ว");
+            }
+
+            closeModal();
+        }
+
+        // Initialize App on window load
+        window.onload = initData;
+    </script>
+</body>
+</html>
